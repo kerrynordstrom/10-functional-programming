@@ -14,9 +14,9 @@ var app = app || {};
     Object.keys(rawDataObj).forEach(key => this[key] = rawDataObj[key]);
   }
 
-  app.Article.all = [];
+  Article.all = [];
 
-  app.Article.prototype.toHtml = function() {
+  Article.prototype.toHtml = function() {
     var template = Handlebars.compile($('#article-template').text());
 
     this.daysAgo = parseInt((new Date() - new Date(this.publishedOn))/60/60/24/1000);
@@ -26,47 +26,55 @@ var app = app || {};
     return template(this);
   };
 
-  app.Article.loadAll = rawData => {
+  Article.loadAll = rawData => {
     rawData.sort((a,b) => (new Date(b.publishedOn)) - (new Date(a.publishedOn)))
 
-    // TODO: Refactor this .forEach() code, by using a .map() call instead, since what we are trying to accomplish is the transformation of one collection into another. Remember that we can set variables equal to the result of functions. So if we set a variable equal to the result of a .map(), it will be our transformed array.
+    // DONE: Refactor this .forEach() code, by using a .map() call instead, since what we are trying to accomplish is the transformation of one collection into another. Remember that we can set variables equal to the result of functions. So if we set a variable equal to the result of a .map(), it will be our transformed array.
     // There is no need to push to anything.
 
-    /* OLD forEach():
-    rawData.forEach(articleObject => Article.all.push(new Article(articleObject)))
+    Article.all = rawData.map(articleObject => new Article(articleObject));
 
-  */
 
   };
 
-  app.Article.fetchAll = callback => {
+  Article.fetchAll = callback => {
     $.get('/articles')
       .then(results => {
-        app.Article.loadAll(results);
+        Article.loadAll(results);
         callback();
       })
   };
 
-  // TODO: Chain together a .map() and a .reduce() call to get a rough count of all words in all articles. Yes, you have to do it this way.
-  app.Article.numWordsAll = () => {
-    return app.Article.all.map().reduce()
+  // DONE: Chain together a .map() and a .reduce() call to get a rough count of all words in all articles. Yes, you have to do it this way.
+  Article.numWordsAll = () => {
+    return Article.all.map(articleObject => articleObject.body.length).reduce((a, b) => a + b, 0)
+    + Article.all.map(articleObject => articleObject.title.length).reduce((a, b) => a + b, 0);
   };
 
-  // TODO: Chain together a .map() and a .reduce() call to produce an array of unique author names. You will probably need to use the optional accumulator argument in your reduce call.
-  app.Article.allAuthors = () => {
-    return app.Article.all.map().reduce();
+  // DONE: Chain together a .map() and a .reduce() call to produce an array of unique author names. You will probably need to use the optional accumulator argument in your reduce call.
+  Article.allAuthors = () => {
+    return Article.all.map(articleObject => articleObject.author).reduce((authors, author) => {
+      if (!authors.includes(author)) {
+        return authors.concat([author]);
+      }
+      return authors;
+    }, [])
   };
 
-  app.Article.numWordsByAuthor = () => {
-    return app.Article.allAuthors().map(author => {
-      // TODO: Transform each author string into an object with properties for the author's name, as well as the total number of words across all articles written by the specified author.
+  Article.numWordsByAuthor = () => {
+    return Article.allAuthors().map(author => {
+      let totalByAuthor = Article.all.filter(articleObject => articleObject.author === author).map(articleObject => articleObject.body.length).reduce((a, b) => a + b, 0) + Article.all.filter(articleObject => articleObject.author === author).map(articleObject => articleObject.title.length).reduce((a, b) => a + b, 0);
+      // DONE: Transform each author string into an object with properties for the author's name, as well as the total number of words across all articles written by the specified author.
       // HINT: This .map() should be set up to return an object literal with two properties.
       // The first property should be pretty straightforward, but you will need to chain some combination of .filter(), .map(), and .reduce() to get the value for the second property.
-
+      return {
+        name: author,
+        words: totalByAuthor
+      }
     })
   };
 
-  app.Article.truncateTable = callback => {
+  Article.truncateTable = callback => {
     $.ajax({
       url: '/articles',
       method: 'DELETE',
@@ -77,14 +85,14 @@ var app = app || {};
       .then(callback);
   };
 
-  app.Article.prototype.insertRecord = function(callback) {
+  Article.prototype.insertRecord = function(callback) {
     // REVIEW: Why can't we use an arrow function here for .insertRecord()?
     $.post('/articles', {author: this.author, authorUrl: this.authorUrl, body: this.body, category: this.category, publishedOn: this.publishedOn, title: this.title})
       .then(console.log)
       .then(callback);
   };
 
-  app.Article.prototype.deleteRecord = function(callback) {
+  Article.prototype.deleteRecord = function(callback) {
     $.ajax({
       url: `/articles/${this.article_id}`,
       method: 'DELETE'
@@ -93,7 +101,7 @@ var app = app || {};
       .then(callback);
   };
 
-  app.Article.prototype.updateRecord = function(callback) {
+  Article.prototype.updateRecord = function(callback) {
     $.ajax({
       url: `/articles/${this.article_id}`,
       method: 'PUT',
@@ -110,5 +118,5 @@ var app = app || {};
       .then(console.log)
       .then(callback);
   };
-  module.Article = Article;
-});
+  return module.Article = Article;
+})(app);

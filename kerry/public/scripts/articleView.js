@@ -93,7 +93,7 @@ var app = app || {};
     var article;
     $('#articles').empty();
 
-    article = new app.Article({
+    article = new Article({
       title: $('#article-title').val(),
       author: $('#article-author').val(),
       authorUrl: $('#article-author-url').val(),
@@ -108,7 +108,7 @@ var app = app || {};
 
   articleView.submit = event => {
     event.preventDefault();
-    let article = new app.Article({
+    let article = new Article({
       title: $('#article-title').val(),
       author: $('#article-author').val(),
       authorUrl: $('#article-author-url').val(),
@@ -137,7 +137,7 @@ var app = app || {};
   articleView.initAdminPage = () => {
     // TODO: Call the Handlebars .compile() method, which will return a function for you to use where needed.
     // Make sure you assign the result of your Handlebars.compile call to a variable called "template", since we are then calling "template" below.
-    let template = Handlebars.compile();
+    let template = Handlebars.compile($('#admin-template').html());
 
 
     // REVIEW: We use .forEach() here because we are relying on the side-effects of the callback function: appending to the DOM.
@@ -148,5 +148,5 @@ var app = app || {};
     $('#blog-stats .articles').text(app.Article.all.length);
     $('#blog-stats .words').text(app.Article.numWordsAll());
   };
-  module.articleView = articleView;
-}(app));
+  return module.articleView = articleView;
+})(app);
